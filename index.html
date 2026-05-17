@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问卷</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-size:18px; }
+html, body { width:100%; height:100%; background:#f7f8fa; display:flex; justify-content:center; align-items:center; padding:10px; }
+
+.box { background:#fff; width:100%; max-width:600px; padding:25px 20px; border-radius:12px; box-shadow:0 2px 15px rgba(0,0,0,0.05); display:none; flex-direction:column; }
+.title { font-size:22px; text-align:center; color:#333; font-weight:bold; margin-bottom:15px; }
+.progress { text-align:center; font-size:13px; color:#666; margin-bottom:15px; }
+.question { font-size:17px; color:#222; margin-bottom:15px; line-height:1.6; }
+.options { display:flex; flex-direction:column; gap:10px; }
+.option { padding:14px; border:1px solid #ddd; border-radius:8px; cursor:pointer; background:#fff; transition:0.2s; }
+.option:hover { background:#f0f0f0; }
+.option.selected { background:#d0d0d0; border-color:#999; }
+.btn-group { display:flex; justify-content:space-between; margin-top:15px; }
+.btn { padding:12px 20px; border:none; border-radius:6px; font-size:16px; cursor:pointer; flex:1; max-width:120px; text-align:center; }
+.prev-btn { background:#eee; color:#333; margin-right:10px; }
+.next-btn { background:#555; color:#fff; }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* 特效 */
+.terror-mask { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+.terror-text { color:#d80000; font-size:18px; letter-spacing:6px; text-align:center; padding:20px; }
+.terror-sub { color:#666; font-size:13px; margin-top:20px; }
+
+.float-text { position:fixed; font-weight:bold; pointer-events:none; z-index:9999; white-space:nowrap; }
+
+.peep-text { position:fixed; color:#ff2b2b; opacity:0.18; font-size:16px; pointer-events:none; z-index:99; white-space:nowrap; animation:fadePulse 4s infinite alternate; }
+@keyframes fadePulse { from{opacity:0.10} to{opacity:0.28} }
+
+.fullscreen-flood { position:fixed; top:0; left:0; width:100vw; height:100vh; color:#d80000; font-size:14px; z-index:9999; word-break:break-all; background:#000; display:flex; align-items:center; justify-content:center; padding:20px; line-height:1.8; }
+
+.start-modal { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px; }
+.start-text { color:#fff; font-size:16px; text-align:center; }
+.start-btn { padding:12px 40px; background:#d80000; color:#fff; border:none; border-radius:6px; font-size:16px; cursor:pointer; }
+.tiny-red-tip { color:#ff4444; font-size:12px; margin-top:5px; }
+
+.flash-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:100000; pointer-events:none; background:#000; }
+
+.cursor-trail { position:fixed; color:#d80000; font-size:13px; pointer-events:none; z-index:10000; white-space:nowrap; opacity:0.8; }
+
+.end-modal { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:15px; }
+.end-text { color:#d80000; font-size:20px; letter-spacing:4px; }
+.end-sub { color:#666; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="box" id="mainBox">
+  <div class="title" id="qTitle"></div>
+  <div class="progress" id="qProgress"></div>
+  <div class="question" id="qText"></div>
+  <div class="options" id="qOptions"></div>
+  <div class="btn-group">
+    <button class="btn prev-btn" id="prevBtn">上一题</button>
+    <button class="btn next-btn" id="nextBtn">下一题</button>
+  </div>
+</div>
+
+<script>
+// ==================== 题目 ====================
+const questions = [
+  { q:"1. 独处时你总觉得暗处有视线盯着你吗？", opt:["经常会","偶尔","几乎不会","完全没有"] },
+  { q:"2. 深夜关灯后你会刻意回避镜子吗？", opt:["一定会避开","偶尔不敢看","无所谓","很喜欢直视"] },
+  { q:"3. 安静深夜你曾听见屋内不明异响吗？", opt:["常常听到","偶尔听见","从没听过","以为是错觉"] },
+  { q:"4. 走夜路你会下意识加快脚步吗？", opt:["极度紧张","稍微加速","正常行走","毫无感觉"] },
+  { q:"5. 睡觉前你会反复检查门窗是否锁好？", opt:["反复确认多次","简单检查一遍","从不检查","懒得在意"] },
+  { q:"6. 发呆放空时耳边出现模糊低语声？", opt:["时常出现","偶尔恍惚","从未有过","只当幻听"] },
+  { q:"7. 无风时窗帘莫名晃动你见过吗？", opt:["亲眼见过","隐约注意过","没有见过","没留意过"] },
+  { q:"8. 你害怕半夜突然响起的门铃声吗？", opt:["极度害怕","有点心慌","毫无波澜","反而习惯"] },
+];
+
+// ==================== 状态 ====================
+let current = 0;
+let answers = Array(questions.length).fill(null);
+let allTimers = [];
+const boxEl = document.getElementById('mainBox');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function cleanup() {
+  allTimers.forEach(t => { try { clearInterval(t); } catch(e){} try { clearTimeout(t); } catch(e){} });
+  allTimers = [];
+  document.querySelectorAll('.terror-mask,.float-text,.peep-text,.fullscreen-flood,.flash-overlay,.cursor-trail').forEach(e=>e.remove());
+  document.body.style.background = '#f7f8fa';
+  document.body.style.transform = '';
+  boxEl.style.opacity = '1';
+  prevBtn.disabled = (current === 0);
+  nextBtn.disabled = (answers[current] === null);
+}
+
+// ==================== 渲染 ====================
+function renderQuestion() {
+  cleanup();
+  const q = questions[current];
+  document.getElementById('qTitle').innerText = '第 '+(current+1)+' 题';
+  document.getElementById('qProgress').innerText = (current+1)+' / '+questions.length;
+  document.getElementById('qText').innerText = q.q;
+
+  const optsEl = document.getElementById('qOptions');
+  optsEl.innerHTML = '';
+  q.opt.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    if (answers[current] === i) div.classList.add('selected');
+    div.innerText = String.fromCharCode(65+i) + '. ' + opt;
+    div.onclick = function() {
+      answers[current] = i;
+      optsEl.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+      div.classList.add('selected');
+      nextBtn.disabled = false;
+      triggerSelectEffect(i); // ★ 选选项触发特效
+    };
+    optsEl.appendChild(div);
+  });
+
+  prevBtn.disabled = (current === 0);
+  nextBtn.disabled = (answers[current] === null);
+
+  triggerEnterEffect(); // ★ 进入题目触发特效
+}
+
+// ==================== 导航 ====================
+prevBtn.onclick = function() {
+  if (current > 0) { current--; renderQuestion(); }
+};
+nextBtn.onclick = function() {
+  if (current < questions.length - 1) { current++; renderQuestion(); }
+  else { showEnding(); }
+};
+
+// ==================== ★ 特效触发 ====================
+
+function triggerEnterEffect() {
+  if (current === 1) effectScreenShake(3000);
+  if (current === 2) effectPeeping(["我一直在看着你","不要躲开","我看见你了","你跑不掉的"], 4000);
+  if (current === 4) effectCursorTrail("别回头", 4000);
+  if (current === 7) setTimeout(function(){ effectHijack(["亲爱的等我好吗","别选这个","我在看着你哦","求求你了"], 3000); }, 2000);
+}
+
+function triggerSelectEffect(index) {
+  if (current === 2 && index <= 1) {
+    effectRedFloat(["你听见了是吗","我也听见了","就在你身后"], 3500);
+    setTimeout(function(){ if (current === 2) { current++; renderQuestion(); } }, 3500);
+  }
+  if (current === 3 && index === 0) {
+    effectScreenFlood("我爱你", 1500);
+    setTimeout(function(){ if (current === 3) { current++; renderQuestion(); } }, 1500);
+  }
+  if (current === 5 && index <= 1) {
+    effectTerrorType("你真的听到了吗？\n那不是幻听……");
+  }
+  if (current === 6 && index <= 1) {
+    effectFlash(5, 150);
+  }
+}
+
+// ==================== ★ 特效函数 ====================
+
+function effectTerrorType(text) {
+  boxEl.style.display = 'none';
+  var mask = document.createElement('div'); mask.className = 'terror-mask';
+  var t = document.createElement('div'); t.className = 'terror-text';
+  var sub = document.createElement('div'); sub.className = 'terror-sub';
+  mask.appendChild(t); mask.appendChild(sub);
+  document.body.appendChild(mask);
+  var i = 0;
+  function type() {
+    if (i < text.length) { t.innerText += text[i]; i++; setTimeout(type, 70); }
+    else {
+      sub.innerText = '点击任意位置继续';
+      mask.onclick = function(){ mask.remove(); boxEl.style.display = 'flex'; current++; renderQuestion(); };
+    }
+  }
+  type();
+}
+
+function effectScreenFlood(text, dur) {
+  boxEl.style.display = 'none';
+  var el = document.createElement('div'); el.className = 'fullscreen-flood';
+  document.body.appendChild(el);
+  var i = 0, max = 400;
+  var timer = setInterval(function(){
+    el.innerText += text[i % text.length]; i++;
+    if (el.innerText.length >= max) { clearInterval(timer); setTimeout(function(){ el.remove(); boxEl.style.display = 'flex'; }, dur); }
+  }, 8);
+  allTimers.push(timer);
+}
+
+function effectRedFloat(arr, dur) {
+  document.body.style.background = '#d80000';
+  boxEl.style.opacity = '0';
+  var els = [];
+  var timer = setInterval(function(){
+    for (var j=0; j<8; j++) {
+      var el = document.createElement('div'); el.className = 'float-text';
+      el.innerText = arr[Math.floor(Math.random()*arr.length)];
+      el.style.left = (10+Math.random()*80)+'vw';
+      el.style.top = (10+Math.random()*80)+'vh';
+      el.style.fontSize = (12+Math.random()*20)+'px';
+      el.style.color = ['#fff','#ffcccc','#ff8888'][Math.floor(Math.random()*3)];
+      document.body.appendChild(el); els.push(el);
+    }
+  }, 200);
+  allTimers.push(timer);
+  setTimeout(function(){
+    clearInterval(timer); els.forEach(function(e){ e.remove(); });
+    document.body.style.background = '#f7f8fa'; boxEl.style.opacity = '1';
+  }, dur);
+}
+
+function effectPeeping(arr, dur) {
+  var els = [];
+  var timer = setInterval(function(){
+    for (var j=0; j<10; j++) {
+      var el = document.createElement('div'); el.className = 'peep-text';
+      el.innerText = arr[Math.floor(Math.random()*arr.length)];
+      el.style.left = Math.random()*95+'vw';
+      el.style.top = Math.random()*95+'vh';
+      document.body.appendChild(el); els.push(el);
+    }
+  }, 100);
+  allTimers.push(timer);
+  setTimeout(function(){ clearInterval(timer); els.forEach(function(e){ e.remove(); }); }, dur);
+}
+
+// ★ 屏幕震动
+function effectScreenShake(dur) {
+  var start = Date.now();
+  function shake() {
+    if (Date.now()-start > dur) { document.body.style.transform = ''; return; }
+    document.body.style.transform = 'translate('+((Math.random()-0.5)*8)+'px,'+((Math.random()-0.5)*8)+'px)';
+    requestAnimationFrame(shake);
+  }
+  shake();
+}
+
+// ★ 选项篡改
+function effectHijack(arr, dur) {
+  var opts = document.querySelectorAll('.option');
+  var originals = [];
+  for (var i=0; i<opts.length; i++) originals.push(opts[i].innerText);
+  prevBtn.disabled = true; nextBtn.disabled = true;
+  for (var i=0; i<opts.length; i++) {
+    (function(idx){
+      setTimeout(function(){
+        opts[idx].innerText = arr[idx % arr.length];
+        opts[idx].style.color = '#d80000';
+        opts[idx].style.pointerEvents = 'none';
+      }, idx*300);
+    })(i);
+  }
+  setTimeout(function(){
+    for (var i=0; i<opts.length; i++) {
+      opts[i].innerText = originals[i];
+      opts[i].style.color = '';
+      opts[i].style.pointerEvents = 'auto';
+    }
+    prevBtn.disabled = (current===0);
+    nextBtn.disabled = (answers[current]===null);
+  }, dur + opts.length*300);
+}
+
+// ★ 屏幕闪烁
+function effectFlash(count, interval) {
+  var overlay = document.createElement('div'); overlay.className = 'flash-overlay';
+  document.body.appendChild(overlay);
+  var c = 0;
+  var timer = setInterval(function(){
+    overlay.style.opacity = (c%2===0) ? '1' : '0'; c++;
+    if (c >= count*2) { clearInterval(timer); overlay.remove(); }
+  }, interval);
+  allTimers.push(timer);
+}
+
+// ★ 鼠标跟随
+function effectCursorTrail(text, dur) {
+  function handler(e) {
+    var el = document.createElement('div'); el.className = 'cursor-trail';
+    el.innerText = text; el.style.left = (e.clientX+15)+'px'; el.style.top = (e.clientY+10)+'px';
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 800);
+  }
+  document.addEventListener('mousemove', handler);
+  setTimeout(function(){ document.removeEventListener('mousemove', handler); }, dur);
+}
+
+// ==================== 结束 ====================
+function showEnding() {
+  cleanup(); boxEl.style.display = 'none';
+  var end = document.createElement('div'); end.className = 'end-modal';
+  end.innerHTML = '<div class="end-text">问卷结束</div><div class="end-sub">感谢你的参与……</div><div class="end-sub" style="color:#d80000;margin-top:10px;">我会一直看着你的 ^^</div>';
+  document.body.appendChild(end);
+}
+
+// ==================== 开始 ====================
+(function(){
+  var modal = document.createElement('div'); modal.className = 'start-modal';
+  modal.innerHTML = '<div class="start-text">欢迎参与心理调查问卷</div><div class="tiny-red-tip">⚠ 包含微恐效果，不适请关闭</div>';
+  var btn = document.createElement('button'); btn.className = 'start-btn'; btn.innerText = '开始';
+  btn.onclick = function(){ modal.remove(); boxEl.style.display = 'flex'; renderQuestion(); };
+  modal.appendChild(btn);
+  document.body.appendChild(modal);
+})();
+</script>
+</body>
+</html>
