@@ -136,20 +136,20 @@ nextBtn.onclick = function() {
 // ==================== ★ 特效触发 ====================
 
 function triggerEnterEffect() {
-  if (current === 1) effectScreenShake(3000);
-  if (current === 2) effectPeeping(["我一直在看着你","不要躲开","我看见你了","你跑不掉的"], 4000);
-  if (current === 4) effectCursorTrail("别回头", 4000);
-  if (current === 7) setTimeout(function(){ effectHijack(["亲爱的等我好吗","别选这个","我在看着你哦","求求你了"], 3000); }, 2000);
+  if (current === 1) effectScreenShake(30);
+  if (current === 2) effectPeeping(["我一直在看着你","不要躲开","我看见你了","你跑不掉的"], 400);
+  if (current === 4) effectCursorTrail("别回头", 400);
+  if (current === 7) setTimeout(function(){ effectHijack(["亲爱的等我好吗","别选这个","我在看着你哦","求求你了"], 300); }, 200);
 }
 
 function triggerSelectEffect(index) {
   if (current === 2 && index <= 1) {
-    effectRedFloat(["你听见了是吗","我也听见了","就在你身后"], 3500);
-    setTimeout(function(){ if (current === 2) { current++; renderQuestion(); } }, 3500);
+    effectRedFloat(["你听见了是吗","我也听见了","就在你身后"], 350);
+    setTimeout(function(){ if (current === 2) { current++; renderQuestion(); } }, 350);
   }
   if (current === 3 && index === 0) {
-    effectScreenFlood("我爱你", 1500);
-    setTimeout(function(){ if (current === 3) { current++; renderQuestion(); } }, 1500);
+    effectScreenFlood("我爱你", 150);
+    setTimeout(function(){ if (current === 3) { current++; renderQuestion(); } }, 150);
   }
   if (current === 5 && index <= 1) {
     effectTerrorType("你真的听到了吗？\n那不是幻听……");
@@ -233,7 +233,7 @@ function effectScreenShake(dur) {
   var start = Date.now();
   function shake() {
     if (Date.now()-start > dur) { document.body.style.transform = ''; return; }
-    document.body.style.transform = 'translate('+((Math.random()-0.5)*8)+'px,'+((Math.random()-0.5)*8)+'px)';
+    document.body.style.transform = 'translate('+((Math.random()-0.5)*4)+'px,'+((Math.random()-0.5)*4)+'px)';
     requestAnimationFrame(shake);
   }
   shake();
