@@ -3,309 +3,323 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>问卷</title>
+<title>纪鸣宇 · 个人主页</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-size:18px; }
-html, body { width:100%; height:100%; background:#f7f8fa; display:flex; justify-content:center; align-items:center; padding:10px; }
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:#000;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;line-height:1.7}
+::selection{background:rgba(88,166,255,0.3)}
 
-.box { background:#fff; width:100%; max-width:600px; padding:25px 20px; border-radius:12px; box-shadow:0 2px 15px rgba(0,0,0,0.05); display:none; flex-direction:column; }
-.title { font-size:22px; text-align:center; color:#333; font-weight:bold; margin-bottom:15px; }
-.progress { text-align:center; font-size:13px; color:#666; margin-bottom:15px; }
-.question { font-size:17px; color:#222; margin-bottom:15px; line-height:1.6; }
-.options { display:flex; flex-direction:column; gap:10px; }
-.option { padding:14px; border:1px solid #ddd; border-radius:8px; cursor:pointer; background:#fff; transition:0.2s; }
-.option:hover { background:#f0f0f0; }
-.option.selected { background:#d0d0d0; border-color:#999; }
-.btn-group { display:flex; justify-content:space-between; margin-top:15px; }
-.btn { padding:12px 20px; border:none; border-radius:6px; font-size:16px; cursor:pointer; flex:1; max-width:120px; text-align:center; }
-.prev-btn { background:#eee; color:#333; margin-right:10px; }
-.next-btn { background:#555; color:#fff; }
-.btn:disabled { opacity:0.4; cursor:not-allowed; }
+/* 3D 画布 */
+#bgCanvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;transition:filter 0.8s}
+#bgCanvas.blurred{filter:blur(12px) brightness(0.5)}
 
-/* 特效 */
-.terror-mask { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-.terror-text { color:#d80000; font-size:18px; letter-spacing:6px; text-align:center; padding:20px; }
-.terror-sub { color:#666; font-size:13px; margin-top:20px; }
+/* 第一屏：纯 3D 背景 */
+.hero-screen{height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;z-index:1}
+.hero-screen h1{font-size:clamp(40px,8vw,64px);font-weight:800;background:linear-gradient(135deg,#58a6ff,#d2a8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
+.hero-screen .sub{color:rgba(200,210,220,0.7);font-size:18px;letter-spacing:4px}
+.hero-screen .scroll-hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:13px;letter-spacing:3px;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
 
-.float-text { position:fixed; font-weight:bold; pointer-events:none; z-index:9999; white-space:nowrap; }
+/* 简历内容区 */
+.content-section{position:relative;z-index:2;padding:60px 24px 80px;background:linear-gradient(to bottom,transparent 0%,rgba(10,10,20,0.85) 15%,rgba(10,10,20,0.95) 100%)}
 
-.peep-text { position:fixed; color:#ff2b2b; opacity:0.18; font-size:16px; pointer-events:none; z-index:99; white-space:nowrap; animation:fadePulse 4s infinite alternate; }
-@keyframes fadePulse { from{opacity:0.10} to{opacity:0.28} }
+.inner{max-width:800px;margin:0 auto}
 
-.fullscreen-flood { position:fixed; top:0; left:0; width:100vw; height:100vh; color:#d80000; font-size:14px; z-index:9999; word-break:break-all; background:#000; display:flex; align-items:center; justify-content:center; padding:20px; line-height:1.8; }
+/* 导航 */
+nav{position:fixed;top:0;width:100%;z-index:100;padding:0 24px;transition:0.3s}
+nav.scrolled{background:rgba(10,10,20,0.8);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06)}
+nav .inner{display:flex;justify-content:space-between;align-items:center;height:56px}
+nav .logo{font-weight:700;font-size:18px;color:#58a6ff;letter-spacing:1px}
+nav .links{display:flex;gap:28px;list-style:none}
+nav .links a{color:rgba(200,210,220,0.6);text-decoration:none;font-size:14px;transition:0.2s}
+nav .links a:hover{color:#fff}
 
-.start-modal { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px; }
-.start-text { color:#fff; font-size:16px; text-align:center; }
-.start-btn { padding:12px 40px; background:#d80000; color:#fff; border:none; border-radius:6px; font-size:16px; cursor:pointer; }
-.tiny-red-tip { color:#ff4444; font-size:12px; margin-top:5px; }
+.section-title{font-size:26px;font-weight:700;color:#f0f6fc;margin:60px 0 36px;display:flex;align-items:center;gap:12px}
+.section-title::before{content:'';width:4px;height:24px;background:#58a6ff;border-radius:2px}
+.section-title span{color:#58a6ff;font-size:15px;font-weight:400}
 
-.flash-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:100000; pointer-events:none; background:#000; }
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.about-item{background:rgba(22,27,34,0.8);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:20px}
+.about-item .label{font-size:12px;color:#8b949e;letter-spacing:1px;margin-bottom:6px}
+.about-item .value{font-size:15px;color:#c9d1d9}
 
-.cursor-trail { position:fixed; color:#d80000; font-size:13px; pointer-events:none; z-index:10000; white-space:nowrap; opacity:0.8; }
+.skills{display:flex;flex-wrap:wrap;gap:10px}
+.skill-tag{padding:8px 16px;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.15);border-radius:20px;font-size:13px;color:#58a6ff}
 
-.end-modal { position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:100000; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:15px; }
-.end-text { color:#d80000; font-size:20px; letter-spacing:4px; }
-.end-sub { color:#666; font-size:14px; }
+.projects{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.project-card{background:rgba(22,27,34,0.8);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:24px;cursor:pointer;transition:0.3s}
+.project-card:hover{border-color:rgba(88,166,255,0.3);transform:translateY(-4px)}
+.project-card .icon{font-size:28px;margin-bottom:12px}
+.project-card h3{font-size:17px;color:#f0f6fc;margin-bottom:6px}
+.project-card .tech{font-size:12px;color:#58a6ff;margin-bottom:10px}
+.project-card p{font-size:13px;color:#8b949e}
+
+.contact-links{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:60px}
+.contact-link{display:flex;align-items:center;gap:10px;padding:14px 20px;background:rgba(22,27,34,0.8);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#c9d1d9;text-decoration:none;font-size:14px;transition:0.3s;flex:1;min-width:160px}
+.contact-link:hover{border-color:#58a6ff}
+.contact-link .icon{font-size:20px}
+
+footer{text-align:center;padding:32px;color:#445566;font-size:13px}
+
+/* 弹窗 */
+.modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:0.3s}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:rgba(22,27,34,0.95);backdrop-filter:blur(16px);border:1px solid #30363d;border-radius:14px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;padding:32px;position:relative;animation:modalIn 0.3s ease}
+@keyframes modalIn{from{transform:scale(0.92) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#8b949e;font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:#21262d;color:#fff}
+.modal h2{font-size:22px;color:#f0f6fc;margin-bottom:8px}
+.modal .modal-tech{font-size:13px;color:#58a6ff;margin-bottom:16px}
+.modal .modal-body{color:#c9d1d9;font-size:14px;line-height:1.8}
+.modal .modal-body h3{font-size:15px;color:#f0f6fc;margin:16px 0 6px}
+.modal .modal-body ul{padding-left:20px;margin:8px 0}
+.modal .modal-body li{color:#8b949e;margin:4px 0}
+
+.fade-in{opacity:0;transform:translateY(24px);transition:0.7s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:640px){.about-grid,.projects{grid-template-columns:1fr}.contact-link{min-width:100%}}
 </style>
 </head>
 <body>
 
-<div class="box" id="mainBox">
-  <div class="title" id="qTitle"></div>
-  <div class="progress" id="qProgress"></div>
-  <div class="question" id="qText"></div>
-  <div class="options" id="qOptions"></div>
-  <div class="btn-group">
-    <button class="btn prev-btn" id="prevBtn">上一题</button>
-    <button class="btn next-btn" id="nextBtn">下一题</button>
+<canvas id="bgCanvas"></canvas>
+
+<nav id="navbar">
+  <div class="inner">
+    <div class="logo">JMY</div>
+    <ul class="links">
+      <li><a href="#about">关于</a></li>
+      <li><a href="#skills">技能</a></li>
+      <li><a href="#projects">项目</a></li>
+      <li><a href="#contact">联系</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- 第一屏：纯 3D -->
+<div class="hero-screen">
+  <div class="scroll-hint">↓ 了解更多</div>
+</div>
+
+<!-- 简历内容 -->
+<div class="content-section">
+
+<div class="inner">
+
+<div style="text-align:center;padding:20px 0 40px" class="fade-in">
+  <h1 style="font-size:clamp(32px,6vw,44px);font-weight:800;background:linear-gradient(135deg,#58a6ff,#d2a8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">纪鸣宇</h1>
+  <p style="color:rgba(200,210,220,0.6);font-size:16px;letter-spacing:2px">网络 / 运维工程师 · 实习</p>
+</div>
+
+<div id="about">
+  <div class="section-title fade-in"><span>01</span> 关于我</div>
+  <div class="about-grid fade-in">
+    <div class="about-item"><div class="label">姓名</div><div class="value">纪鸣宇</div></div>
+    <div class="about-item"><div class="label">学校</div><div class="value">泰州职业技术学院</div></div>
+    <div class="about-item"><div class="label">方向</div><div class="value">网络工程 / 运维自动化</div></div>
+    <div class="about-item"><div class="label">状态</div><div class="value">求职中 · 实习岗</div></div>
   </div>
 </div>
 
-<script>
-// ==================== 题目 ====================
-const questions = [
-  { q:"1. 独处时你总觉得自身在晃动吗？", opt:["经常会","偶尔","几乎不会","完全没有"] },
-  { q:"2. 深夜关灯后你会刻意回避镜子吗？", opt:["一定会避开","偶尔不敢看","无所谓","很喜欢直视"] },
-  { q:"3. 安静深夜你曾听见屋内不明异响吗？", opt:["常常听到","偶尔听见","从没听过","以为是错觉"] },
-  { q:"4. 走夜路你会下意识加快脚步吗？", opt:["极度紧张","稍微加速","正常行走","毫无感觉"] },
-  { q:"5. 睡觉前你会反复检查门窗是否锁好？", opt:["反复确认多次","简单检查一遍","从不检查","懒得在意"] },
-  { q:"6. 发呆放空时耳边出现模糊低语声？", opt:["时常出现","偶尔恍惚","从未有过","只当幻听"] },
-  { q:"7. 无风时窗帘莫名晃动你见过吗？", opt:["亲眼见过","隐约注意过","没有见过","没留意过"] },
-  { q:"8. 你害怕半夜突然响起的门铃声吗？", opt:["极度害怕","有点心慌","毫无波澜","反而习惯"] },
+<div id="skills">
+  <div class="section-title fade-in"><span>02</span> 技能</div>
+  <div class="skills fade-in">
+    <span class="skill-tag">TCP/IP</span><span class="skill-tag">Linux</span><span class="skill-tag">Python</span>
+    <span class="skill-tag">Shell</span><span class="skill-tag">Wireshark</span><span class="skill-tag">VMware</span>
+    <span class="skill-tag">Selenium</span><span class="skill-tag">Git</span>
+    <span class="skill-tag">HTML/CSS/JS</span><span class="skill-tag">systemd</span>
+  </div>
+</div>
+
+<div id="projects">
+  <div class="section-title fade-in"><span>03</span> 项目</div>
+  <div class="projects fade-in">
+    <div class="project-card" onclick="openProject('proj1')">
+      <div class="icon">🔄</div><h3>校园网自动认证脚本</h3>
+      <div class="tech">Python · Shell · AppleScript · systemd</div>
+      <p>802.1x 断线自动重连，7×24 守护运行。</p>
+    </div>
+    <div class="project-card" onclick="openProject('proj2')">
+      <div class="icon">📸</div><h3>图片批量抓取工具</h3>
+      <div class="tech">Selenium · Python · JavaScript</div>
+      <p>综测审核自动化，效率提升数倍。</p>
+    </div>
+  </div>
+</div>
+
+<div id="contact">
+  <div class="section-title fade-in"><span>04</span> 联系方式</div>
+  <div class="contact-links fade-in">
+    <a class="contact-link" href="mailto:2512652436@qq.com"><span class="icon">✉️</span> 2512652436@qq.com</a>
+    <a class="contact-link" href="https://github.com/ljy9199" target="_blank"><span class="icon">💻</span> GitHub</a>
+    <a class="contact-link" href="#"><span class="icon">📞</span> 18762127848</a>
+  </div>
+</div>
+
+</div>
+
+<footer>© 2026 纪鸣宇</footer>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h2 id="modalTitle"></h2>
+    <div class="modal-tech" id="modalTech"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.getElementById('bgCanvas').replaceWith(renderer.domElement);
+renderer.domElement.id = 'bgCanvas';
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 1, 200);
+camera.position.set(6, 4, 36);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.7, 0.25, 0.7);
+bloom.threshold = 0.12; bloom.strength = 0.6; bloom.radius = 0.3;
+composer.addPass(bloom);
+
+const l1 = new THREE.PointLight(0x6688cc, 0.6, 80); l1.position.set(20, 30, 30); scene.add(l1);
+const l2 = new THREE.PointLight(0xcc8866, 0.4, 60); l2.position.set(-20, -5, 25); scene.add(l2);
+scene.add(new THREE.AmbientLight(0x334466, 0.3));
+
+const boxGroup = new THREE.Group(); scene.add(boxGroup);
+const orbitGroup = new THREE.Group(); scene.add(orbitGroup);
+
+boxGroup.add(new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.BoxGeometry(10,10,10)),
+  new THREE.LineBasicMaterial({color:0x58a6ff,transparent:true,opacity:0.8})
+));
+
+const tetraGroup = new THREE.Group();
+tetraGroup.add(new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.TetrahedronGeometry(9.6,0)),
+  new THREE.LineBasicMaterial({color:0xff8866,transparent:true,opacity:0.8})
+));
+boxGroup.add(tetraGroup);
+
+const orbitBodies = [];
+const shapes = [
+  new THREE.BoxGeometry(1.2,1.2,1.2), new THREE.TetrahedronGeometry(1,0),
+  new THREE.OctahedronGeometry(0.9,0), new THREE.IcosahedronGeometry(0.85,0),
+  new THREE.DodecahedronGeometry(0.8,0), new THREE.BoxGeometry(0.9,0.9,0.9),
 ];
-
-// ==================== 状态 ====================
-let current = 0;
-let answers = Array(questions.length).fill(null);
-let allTimers = [];
-const boxEl = document.getElementById('mainBox');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-
-function cleanup() {
-  allTimers.forEach(t => { try { clearInterval(t); } catch(e){} try { clearTimeout(t); } catch(e){} });
-  allTimers = [];
-  document.querySelectorAll('.terror-mask,.float-text,.peep-text,.fullscreen-flood,.flash-overlay,.cursor-trail').forEach(e=>e.remove());
-  document.body.style.background = '#f7f8fa';
-  document.body.style.transform = '';
-  boxEl.style.opacity = '1';
-  prevBtn.disabled = (current === 0);
-  nextBtn.disabled = (answers[current] === null);
+for(let i=0;i<6;i++){
+  const e=new THREE.EdgesGeometry(shapes[i]);
+  const b=new THREE.LineSegments(e,new THREE.LineBasicMaterial({color:new THREE.Color().setHSL(i/6,0.7,0.6),transparent:true,opacity:0.65}));
+  const dist=14+Math.random()*12, ang=(i/6)*Math.PI*2;
+  b.position.set(Math.cos(ang)*dist,(Math.random()-0.5)*6,Math.sin(ang)*dist);
+  b.userData={dist,ang,speed:0.003+Math.random()*0.008,yBase:b.position.y,yAmp:Math.random()*3};
+  orbitGroup.add(b);orbitBodies.push(b);
 }
 
-// ==================== 渲染 ====================
-function renderQuestion() {
-  cleanup();
-  const q = questions[current];
-  document.getElementById('qTitle').innerText = '第 '+(current+1)+' 题';
-  document.getElementById('qProgress').innerText = (current+1)+' / '+questions.length;
-  document.getElementById('qText').innerText = q.q;
+const pGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(300*3),pCol=new Float32Array(300*3);
+for(let i=0;i<300;i++){
+  const th=Math.random()*Math.PI*2,ph=Math.random()*Math.PI,r=16+Math.random()*55;
+  pPos[i*3]=r*Math.sin(ph)*Math.cos(th);pPos[i*3+1]=r*Math.cos(ph);pPos[i*3+2]=r*Math.sin(ph)*Math.sin(th);
+  const c=new THREE.Color().setHSL(0.55+Math.random()*0.18,0.6,0.45+Math.random()*0.5);
+  pCol[i*3]=c.r;pCol[i*3+1]=c.g;pCol[i*3+2]=c.b;
+}
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+const pts=new THREE.Points(pGeo,new THREE.PointsMaterial({size:0.18,vertexColors:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0.55,transparent:true}));
+scene.add(pts);
 
-  const optsEl = document.getElementById('qOptions');
-  optsEl.innerHTML = '';
-  q.opt.forEach((opt, i) => {
-    const div = document.createElement('div');
-    div.className = 'option';
-    if (answers[current] === i) div.classList.add('selected');
-    div.innerText = String.fromCharCode(65+i) + '. ' + opt;
-    div.onclick = function() {
-      answers[current] = i;
-      optsEl.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
-      div.classList.add('selected');
-      nextBtn.disabled = false;
-      triggerSelectEffect(i); // ★ 选选项触发特效
-    };
-    optsEl.appendChild(div);
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
+});
+
+// ★ 正方体自动旋转
+function animate(){
+  requestAnimationFrame(animate);
+  boxGroup.rotation.y+=0.005;
+  boxGroup.rotation.x+=0.001;
+  tetraGroup.rotation.y-=0.008;
+  tetraGroup.rotation.x-=0.002;
+  orbitBodies.forEach(b=>{
+    b.userData.ang+=b.userData.speed;
+    b.position.x=Math.cos(b.userData.ang)*b.userData.dist;
+    b.position.z=Math.sin(b.userData.ang)*b.userData.dist;
+    b.position.y=b.userData.yBase+Math.sin(b.userData.ang*2)*b.userData.yAmp;
+    b.rotation.x+=0.01;b.rotation.y+=0.015;
   });
-
-  prevBtn.disabled = (current === 0);
-  nextBtn.disabled = (answers[current] === null);
-
-  triggerEnterEffect(); // ★ 进入题目触发特效
+  pts.rotation.y+=0.0008;pts.rotation.x+=0.0003;
+  const t=performance.now()*0.001;
+  l1.intensity=0.4+Math.sin(t*0.7)*0.2;l2.intensity=0.3+Math.cos(t*0.5)*0.15;
+  composer.render();
 }
+animate();
+</script>
 
-// ==================== 导航 ====================
-prevBtn.onclick = function() {
-  if (current > 0) { current--; renderQuestion(); }
+<!-- 滚动逻辑 -->
+<script>
+// 导航栏背景 + 背景模糊
+const navbar=document.getElementById('navbar');
+const canvas=document.getElementById('bgCanvas');
+const heroScreen=document.querySelector('.hero-screen');
+
+window.addEventListener('scroll',()=>{
+  const scrollY=window.scrollY;
+  const heroH=heroScreen.offsetHeight;
+  
+  // 导航栏
+  if(scrollY>50)navbar.classList.add('scrolled');
+  else navbar.classList.remove('scrolled');
+  
+  // 背景模糊 — 离开第一屏后逐渐模糊
+  const blurAmount=Math.min((scrollY/heroH)*12,12);
+  if(scrollY>0)canvas.classList.add('blurred');
+  else canvas.classList.remove('blurred');
+  canvas.style.filter=`blur(${blurAmount}px) brightness(${1-blurAmount*0.04})`;
+});
+
+// 项目弹窗
+const projectData={
+  proj1:{title:'校园网自动认证脚本',tech:'Python · Shell · AppleScript · systemd',
+    body:`<h3>背景</h3><p>校园网 802.1x 频繁踢人，服务器无法持续在线。</p><h3>方案</h3><p>Python 每15分钟检测网络连通性，断网时 AppleScript 控制 Safari 自动登录。</p><h3>技术要点</h3><ul><li>urllib 请求检测 + 关键词验证</li><li>阻断 802.1x 重认证流程</li><li>systemd 守护 7×24 运行</li></ul><h3>成果</h3><p>稳定运行 14 天以上，彻底解决断网问题。</p>`},
+  proj2:{title:'综测图片批量抓取工具',tech:'Selenium · Python · JavaScript',
+    body:`<h3>背景</h3><p>综测审核每日重复点击数百次。</p><h3>方案</h3><p>Selenium + JS 注入监听点击，localStorage 跨窗口通信。</p><h3>技术要点</h3><ul><li>JS 事件注入 + 跨窗口通信</li><li>多窗口轮询 + CSS 精准匹配</li><li>图片去重 + 信号优雅退出</li></ul><h3>成果</h3><p>一键批量下载，效率提升数倍，已投入使用。</p>`}
 };
-nextBtn.onclick = function() {
-  if (current < questions.length - 1) { current++; renderQuestion(); }
-  else { showEnding(); }
+const overlay=document.getElementById('modalOverlay');
+window.openProject=function(id){
+  const d=projectData[id];if(!d)return;
+  document.getElementById('modalTitle').textContent=d.title;
+  document.getElementById('modalTech').textContent=d.tech;
+  document.getElementById('modalBody').innerHTML=d.body;
+  overlay.classList.add('active');document.body.style.overflow='hidden';
 };
+document.getElementById('modalClose').onclick=()=>{overlay.classList.remove('active');document.body.style.overflow=''};
+overlay.onclick=e=>{if(e.target===overlay){overlay.classList.remove('active');document.body.style.overflow=''}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){overlay.classList.remove('active');document.body.style.overflow=''}});
 
-// ==================== ★ 特效触发 ====================
-
-function triggerEnterEffect() {
-  if (current === 1) effectScreenShake(30);
-  if (current === 2) effectPeeping(["我一直在看着你","不要躲开","我看见你了","你跑不掉的"], 400);
-  if (current === 4) effectCursorTrail("别回头", 400);
-  if (current === 7) setTimeout(function(){ effectHijack(["亲爱的等我好吗","别选这个","我在看着你哦","求求你了"], 300); }, 200);
-}
-
-function triggerSelectEffect(index) {
-  if (current === 2 && index <= 1) {
-    effectRedFloat(["你听见了是吗","我也听见了","就在你身后"], 350);
-    setTimeout(function(){ if (current === 2) { current++; renderQuestion(); } }, 350);
-  }
-  if (current === 3 && index === 0) {
-    effectScreenFlood("我爱你", 150);
-    setTimeout(function(){ if (current === 3) { current++; renderQuestion(); } }, 150);
-  }
-  if (current === 5 && index <= 1) {
-    effectTerrorType("你真的听到了吗？\n那不是幻听……");
-  }
-  if (current === 6 && index <= 1) {
-    effectFlash(5, 150);
-  }
-}
-
-// ==================== ★ 特效函数 ====================
-
-function effectTerrorType(text) {
-  boxEl.style.display = 'none';
-  var mask = document.createElement('div'); mask.className = 'terror-mask';
-  var t = document.createElement('div'); t.className = 'terror-text';
-  var sub = document.createElement('div'); sub.className = 'terror-sub';
-  mask.appendChild(t); mask.appendChild(sub);
-  document.body.appendChild(mask);
-  var i = 0;
-  function type() {
-    if (i < text.length) { t.innerText += text[i]; i++; setTimeout(type, 70); }
-    else {
-      sub.innerText = '点击任意位置继续';
-      mask.onclick = function(){ mask.remove(); boxEl.style.display = 'flex'; current++; renderQuestion(); };
-    }
-  }
-  type();
-}
-
-function effectScreenFlood(text, dur) {
-  boxEl.style.display = 'none';
-  var el = document.createElement('div'); el.className = 'fullscreen-flood';
-  document.body.appendChild(el);
-  var i = 0, max = 400;
-  var timer = setInterval(function(){
-    el.innerText += text[i % text.length]; i++;
-    if (el.innerText.length >= max) { clearInterval(timer); setTimeout(function(){ el.remove(); boxEl.style.display = 'flex'; }, dur); }
-  }, 8);
-  allTimers.push(timer);
-}
-
-function effectRedFloat(arr, dur) {
-  document.body.style.background = '#d80000';
-  boxEl.style.opacity = '0';
-  var els = [];
-  var timer = setInterval(function(){
-    for (var j=0; j<8; j++) {
-      var el = document.createElement('div'); el.className = 'float-text';
-      el.innerText = arr[Math.floor(Math.random()*arr.length)];
-      el.style.left = (10+Math.random()*80)+'vw';
-      el.style.top = (10+Math.random()*80)+'vh';
-      el.style.fontSize = (12+Math.random()*20)+'px';
-      el.style.color = ['#fff','#ffcccc','#ff8888'][Math.floor(Math.random()*3)];
-      document.body.appendChild(el); els.push(el);
-    }
-  }, 200);
-  allTimers.push(timer);
-  setTimeout(function(){
-    clearInterval(timer); els.forEach(function(e){ e.remove(); });
-    document.body.style.background = '#f7f8fa'; boxEl.style.opacity = '1';
-  }, dur);
-}
-
-function effectPeeping(arr, dur) {
-  var els = [];
-  var timer = setInterval(function(){
-    for (var j=0; j<10; j++) {
-      var el = document.createElement('div'); el.className = 'peep-text';
-      el.innerText = arr[Math.floor(Math.random()*arr.length)];
-      el.style.left = Math.random()*95+'vw';
-      el.style.top = Math.random()*95+'vh';
-      document.body.appendChild(el); els.push(el);
-    }
-  }, 100);
-  allTimers.push(timer);
-  setTimeout(function(){ clearInterval(timer); els.forEach(function(e){ e.remove(); }); }, dur);
-}
-
-// ★ 屏幕震动
-function effectScreenShake(dur) {
-  var start = Date.now();
-  function shake() {
-    if (Date.now()-start > dur) { document.body.style.transform = ''; return; }
-    document.body.style.transform = 'translate('+((Math.random()-0.5)*4)+'px,'+((Math.random()-0.5)*4)+'px)';
-    requestAnimationFrame(shake);
-  }
-  shake();
-}
-
-// ★ 选项篡改
-function effectHijack(arr, dur) {
-  var opts = document.querySelectorAll('.option');
-  var originals = [];
-  for (var i=0; i<opts.length; i++) originals.push(opts[i].innerText);
-  prevBtn.disabled = true; nextBtn.disabled = true;
-  for (var i=0; i<opts.length; i++) {
-    (function(idx){
-      setTimeout(function(){
-        opts[idx].innerText = arr[idx % arr.length];
-        opts[idx].style.color = '#d80000';
-        opts[idx].style.pointerEvents = 'none';
-      }, idx*300);
-    })(i);
-  }
-  setTimeout(function(){
-    for (var i=0; i<opts.length; i++) {
-      opts[i].innerText = originals[i];
-      opts[i].style.color = '';
-      opts[i].style.pointerEvents = 'auto';
-    }
-    prevBtn.disabled = (current===0);
-    nextBtn.disabled = (answers[current]===null);
-  }, dur + opts.length*300);
-}
-
-// ★ 屏幕闪烁
-function effectFlash(count, interval) {
-  var overlay = document.createElement('div'); overlay.className = 'flash-overlay';
-  document.body.appendChild(overlay);
-  var c = 0;
-  var timer = setInterval(function(){
-    overlay.style.opacity = (c%2===0) ? '1' : '0'; c++;
-    if (c >= count*2) { clearInterval(timer); overlay.remove(); }
-  }, interval);
-  allTimers.push(timer);
-}
-
-// ★ 鼠标跟随
-function effectCursorTrail(text, dur) {
-  function handler(e) {
-    var el = document.createElement('div'); el.className = 'cursor-trail';
-    el.innerText = text; el.style.left = (e.clientX+15)+'px'; el.style.top = (e.clientY+10)+'px';
-    document.body.appendChild(el);
-    setTimeout(function(){ el.remove(); }, 800);
-  }
-  document.addEventListener('mousemove', handler);
-  setTimeout(function(){ document.removeEventListener('mousemove', handler); }, dur);
-}
-
-// ==================== 结束 ====================
-function showEnding() {
-  cleanup(); boxEl.style.display = 'none';
-  var end = document.createElement('div'); end.className = 'end-modal';
-  end.innerHTML = '<div class="end-text">问卷结束</div><div class="end-sub">感谢你的参与……</div><div class="end-sub" style="color:#d80000;margin-top:10px;">我会一直看着你的 ^^</div>';
-  document.body.appendChild(end);
-}
-
-// ==================== 开始 ====================
-(function(){
-  var modal = document.createElement('div'); modal.className = 'start-modal';
-  modal.innerHTML = '<div class="start-text">欢迎参与心理调查问卷</div><div class="tiny-red-tip">⚠ 包含微恐效果，不适请关闭</div>';
-  var btn = document.createElement('button'); btn.className = 'start-btn'; btn.innerText = '开始';
-  btn.onclick = function(){ modal.remove(); boxEl.style.display = 'flex'; renderQuestion(); };
-  modal.appendChild(btn);
-  document.body.appendChild(modal);
-})();
+// 淡入动画
+const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.15});
+document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
 </script>
 </body>
 </html>
